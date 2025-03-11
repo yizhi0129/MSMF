@@ -12,38 +12,49 @@ FoamFile
     class       dictionary;
     object      controlDict;
 }
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 application     icoFoam;
 
-//startFrom       startTime;
-startFrom       latestTime;
-
+startFrom       latestTime;       // 若已有模拟数据，则从最新时间继续
 startTime       0;
-
 stopAt          endTime;
-//stopAt	  writeNow;
-
-endTime         350;
-
-deltaT          0.05;
+endTime         350;              // 总模拟时间，可保证涡街充分发展
+deltaT          0.05;             // 时间步长，注意要满足 Courant 数要求
 
 writeControl    runTime;
-
-writeInterval   5;
-
+writeInterval   5;                // 每隔 5 个时间单位写一次数据
 purgeWrite      0;
-
 writeFormat     ascii;
-
 writePrecision  8;
-
 writeCompression off;
-
 timeFormat      general;
-
 timePrecision   6;
-
 runTimeModifiable true;
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+functions
+{
+    forces
+    {
+        type            forces;
+        functionObjectLibs ("libforces.so");
+        patches         (cylinder);   // 指定作用力计算区域为圆柱面
+        rho             rhoInf;       // 密度（若密度=1，则设置为 rhoInf = 1）
+        rhoInf          1;
+        CofR            (0 0 0);      // 力的参考点（一般选圆柱中心）
+    }
+    forceCoeffs
+    {
+        type            forceCoeffs;
+        functionObjectLibs ("libforces.so");
+        patches         (cylinder);
+        rho             rhoInf;
+        rhoInf          1;
+        liftDir         (0 1 0);      // 升力方向（本例中为 y 方向）
+        dragDir         (1 0 0);      // 阻力方向（本例中为 x 方向）
+        CofR            (0 0 0);
+        magUInf         1;            // 来流速度大小，请与 0/U 文件中入口速度保持一致
+        lRef            2;            // 参考长度（圆柱直径，假定为 1m）
+        Aref            2;            // 参考面积（2D问题常设为 1）
+        pitchAxis       (0 0 1);      // 计算力矩时绕 z 轴（2D模拟常用）
+    }
+}
